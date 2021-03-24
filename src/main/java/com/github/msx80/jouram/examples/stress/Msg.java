@@ -10,13 +10,13 @@ public class Msg implements Serializable {
 	public final Date instant;
 	public final String text;
 	
-	/*
+	
 	public Msg()
 	{
 		instant = null;
 		text = null;
 	}
-	*/
+	
 	
 	public Msg(Date instant, String text) {
 		super();

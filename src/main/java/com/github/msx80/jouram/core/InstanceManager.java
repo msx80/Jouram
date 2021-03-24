@@ -4,6 +4,7 @@ import java.io.EOFException;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.nio.file.Files;
@@ -89,7 +90,15 @@ class InstanceManager implements InvocationHandler {
 		
 		// do the actual stuff BEFORE logging. If i do it after, if it throws exception the al would be unrecoverable
 		// becouse recalling the method will launch the exception once again
-    	Object res = method.invoke(instance, args);
+    	Object res;
+		try {
+			res = method.invoke(instance, args);
+		} catch (InvocationTargetException e) {
+			
+			// get the naked exception out to the caller otherwise we change the logic of the interface.
+			if(e.getTargetException() instanceof Exception) throw (Exception)e.getTargetException();
+			else throw e; // if it's some other problem, throw it
+		}
 		
 		// is a mutator method?
 		String id = data.getIdByMethod(method);
@@ -232,6 +241,7 @@ class InstanceManager implements InvocationHandler {
 		
 		if(Files.exists(dbJournal))
 		{
+			
 			LOG.info("Replaying journal...");
 			
 			replayJournal(dbJournal);
@@ -250,6 +260,7 @@ class InstanceManager implements InvocationHandler {
 		solo quando si raggiunge end transaction
 	*/
 	private void replayJournal(Path dbJournal) throws Exception {
+		long start = System.currentTimeMillis();
 		int i = 0;
 		int transactions = 0;
 		try {
@@ -325,7 +336,7 @@ class InstanceManager implements InvocationHandler {
 			}
 		}
 
-		LOG.info("Replayed "+i+" calls");
+		LOG.info("Replayed "+i+" calls in "+(System.currentTimeMillis()-start)+" millis.");
 		
 	}
 	
@@ -338,15 +349,19 @@ class InstanceManager implements InvocationHandler {
 
 	public void doSync() {
 		checkWorkerThread();
+		long start = System.currentTimeMillis();
 		LOG.info("Syncing");
 		
 		journal.flush();
+		LOG.info("Synced in "+(System.currentTimeMillis()-start)+" millis.");
 	}
 
 	
-	public synchronized void doSnapshot(int minimalJournalEntry) throws JouramException
+	public void doSnapshot(int minimalJournalEntry) throws JouramException
 	{
+		// doesn't need to be synchronized as it is called in the worker thread sequentially
 		checkWorkerThread();
+		long start = System.currentTimeMillis();
 			LOG.info("Saving snapshot");
 			
 			if(!Files.exists(manager.getPathForJournal(currentDbVersion)))
@@ -381,7 +396,7 @@ class InstanceManager implements InvocationHandler {
 				// step 3
 				manager.deleteJournal(old);
 				
-				LOG.info("Snapshot saved succesfully");
+				LOG.info("Snapshot saved succesfully in "+(System.currentTimeMillis()-start)+" millis.");
 			}
 			catch(JouramException e)
 			{
@@ -400,7 +415,12 @@ class InstanceManager implements InvocationHandler {
 		
 	}
 
-	public void enqueueClose() throws JouramException {
+	public synchronized void enqueueClose() throws JouramException {
+		if (worker.closing)
+		{
+			LOG.info("Instance is already closing.");
+			return;
+		}
 		CmdClose c = new CmdClose();
 		worker.enqueue(c);
 		try {
@@ -410,7 +430,8 @@ class InstanceManager implements InvocationHandler {
 		}
 	}
 
-	public synchronized void doClose() throws JouramException {
+	public void doClose() throws JouramException {
+		// doesn't need to be synchronized as it is called in the worker thread sequentially
 		checkWorkerThread();
 		
 		if(closed)

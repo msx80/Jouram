@@ -8,6 +8,7 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.KryoException;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import com.esotericsoftware.kryo.serializers.VersionFieldSerializer;
 import com.github.msx80.jouram.core.utils.Deserializer;
 import com.github.msx80.jouram.core.utils.SerializationEngine;
 import com.github.msx80.jouram.core.utils.Serializer;
@@ -18,6 +19,7 @@ public class KryoSeder implements SerializationEngine {
 
 	public KryoSeder() {
 		k.setRegistrationRequired(false);
+		k.setDefaultSerializer(VersionFieldSerializer.class);
 	}
 	
 	@Override

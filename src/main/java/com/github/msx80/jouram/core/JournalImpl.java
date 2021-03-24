@@ -21,6 +21,7 @@ public class JournalImpl implements Journal{
 	private final SerializationEngine seder;
 
 	private int numJournalEntries = 0;
+	private static final Object[] empty = new Object[0];
 	
 	public JournalImpl(SerializationEngine seder, VersionManager manager) {
 		this.seder = seder;
@@ -54,7 +55,7 @@ public class JournalImpl implements Journal{
 			numJournalEntries ++;
 			journalStream.getOutputStream().write(WRITE_LOG);
 			journalStream.write(mc.methodId);
-			journalStream.write(mc.parameters);
+			journalStream.write(mc.parameters == null ? empty :mc.parameters);
 			// journalStream.flush(); not flushing each method
 		}
 		catch(Exception e)

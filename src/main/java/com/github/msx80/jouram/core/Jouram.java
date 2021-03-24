@@ -87,6 +87,18 @@ public class Jouram {
 			m.enqueueEndTransaction();
 		}
 	}
+	public static void startTransaction(Object instance) throws JouramException
+	{
+		Jouramed j = asJouramed(instance);
+		InstanceManager m = j.getJouram();
+		m.enqueueStartTransaction();
+	}
+	public static void endTransaction(Object instance) throws JouramException
+	{
+		Jouramed j = asJouramed(instance);
+		InstanceManager m = j.getJouram();
+		m.enqueueEndTransaction();
+	}
 	
 	
 
