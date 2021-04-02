@@ -20,7 +20,7 @@ public class JournalImpl implements Journal{
 	private final VersionManager manager;
 	private final SerializationEngine seder;
 
-	private int numJournalEntries = 0;
+	private long numJournalEntries = 0;
 	private static final Object[] empty = new Object[0];
 	
 	public JournalImpl(SerializationEngine seder, VersionManager manager) {
@@ -98,7 +98,7 @@ public class JournalImpl implements Journal{
 	}
 
 	@Override
-	public int size() {
+	public long size() {
 		return numJournalEntries;
 	}
 

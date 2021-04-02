@@ -8,7 +8,7 @@ public interface Journal {
 	void writeStartTransaction();
 	void writeEndTransaction();
 	void close();
-	int size();
+	long size();
 	void flush();
 	
 }

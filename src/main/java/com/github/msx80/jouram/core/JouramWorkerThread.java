@@ -2,6 +2,9 @@ package com.github.msx80.jouram.core;
 
 import java.util.concurrent.BlockingQueue;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.github.msx80.jouram.core.queue.Cmd;
 import com.github.msx80.jouram.core.queue.CmdClose;
 import com.github.msx80.jouram.core.queue.CmdEndTransaction;
@@ -13,6 +16,7 @@ import com.github.msx80.jouram.core.queue.WaitingCmd;
 
 public class JouramWorkerThread extends Thread {
 
+	private static Logger LOG = LoggerFactory.getLogger(JouramWorkerThread.class);
 	private InstanceManager instanceManager;
 	
 	/**
@@ -42,6 +46,7 @@ public class JouramWorkerThread extends Thread {
 		{
 			while(true)
 			{
+				LOG.trace("Queue size is {}", queue.size());
 				Cmd c = queue.take();
 				if (c instanceof CmdMethodCall)
 				{
@@ -70,7 +75,16 @@ public class JouramWorkerThread extends Thread {
 				}
 				else if(c instanceof CmdSnapshot)
 				{
-					instanceManager.doSnapshot(((CmdSnapshot) c).minimalJournalEntry);
+					try
+					{
+						instanceManager.doSnapshot(((CmdSnapshot) c).minimalJournalEntry);
+						((CmdSnapshot) c).done.complete(null);
+					}
+					catch(Exception e)
+					{
+						((CmdSnapshot) c).done.completeExceptionally(e);	
+						throw e;
+					}
 				}
 				else if(c instanceof CmdClose)
 				{

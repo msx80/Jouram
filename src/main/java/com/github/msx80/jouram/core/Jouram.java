@@ -70,34 +70,34 @@ public class Jouram {
 	{
 		Jouramed j = asJouramed(instance);
 		InstanceManager m = j.getJouram();
-		m.enqueueClose();
+		m.commandClose();
 	}
 	
 	public static void transactional(Object instance, Runnable run) throws JouramException
 	{
 		Jouramed j = asJouramed(instance);
 		InstanceManager m = j.getJouram();
-		m.enqueueStartTransaction();
+		m.commandStartTransaction();
 		try
 		{
 			run.run();
 		}
 		finally
 		{
-			m.enqueueEndTransaction();
+			m.commandEndTransaction();
 		}
 	}
 	public static void startTransaction(Object instance) throws JouramException
 	{
 		Jouramed j = asJouramed(instance);
 		InstanceManager m = j.getJouram();
-		m.enqueueStartTransaction();
+		m.commandStartTransaction();
 	}
 	public static void endTransaction(Object instance) throws JouramException
 	{
 		Jouramed j = asJouramed(instance);
 		InstanceManager m = j.getJouram();
-		m.enqueueEndTransaction();
+		m.commandEndTransaction();
 	}
 	
 	
@@ -123,11 +123,11 @@ public class Jouram {
 	 * @param minimalJournalEntry the number of entries required to do a snapshot, if less the method does nothing
 	 * @throws JouramException
 	 */
-	public static void snapshot(Object instance, int minimalJournalEntry) throws JouramException
+	public static void snapshot(Object instance, long minimalJournalEntry) throws JouramException
 	{
 		Jouramed j = asJouramed(instance);
 		InstanceManager m = j.getJouram();
-		m.enqueueSnapshot(minimalJournalEntry);
+		m.commandSnapshot(minimalJournalEntry);
 	}
 	
 	/**
@@ -141,7 +141,7 @@ public class Jouram {
 	{
 		Jouramed j = asJouramed(instance);
 		InstanceManager m = j.getJouram();
-		m.enqueueSyncAndWait();
+		m.commandSync();
 	}
 	
 }
