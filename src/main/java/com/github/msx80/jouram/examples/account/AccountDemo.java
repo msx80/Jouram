@@ -21,7 +21,7 @@ public class AccountDemo {
 		// these modifications will be applied just once at db creation time
 		initial.addMoney(BigDecimal.valueOf(2000), "Initial sum");
 		
-		Account a = Jouram.open(Paths.get("."), "account", Account.class, initial, new KryoSeder());
+		Account a = Jouram.open(Paths.get("."), "account", Account.class, initial, true, new KryoSeder());
 		
 		a.addMoney(BigDecimal.valueOf(1000), "Monthly pay");
 		a.addMoney(BigDecimal.valueOf(40), "Tip from grandma");

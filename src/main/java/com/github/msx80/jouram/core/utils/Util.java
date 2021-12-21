@@ -1,5 +1,6 @@
 package com.github.msx80.jouram.core.utils;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -25,6 +26,16 @@ public class Util {
 			s.write(object);
 		}
 
+	}
+
+	public static byte[] objectToBuffer(SerializationEngine seder, Object object) throws Exception
+	{
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		try(Serializer s = seder.serializer(baos))
+		{
+			s.write(object);
+		}
+		return baos.toByteArray();
 	}
 
 	

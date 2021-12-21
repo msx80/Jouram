@@ -21,11 +21,14 @@ public class JournalImpl implements Journal{
 	private final SerializationEngine seder;
 
 	private long numJournalEntries = 0;
+	private boolean autoSynch;
+	private int transactionDepth = 0;
 	private static final Object[] empty = new Object[0];
 	
-	public JournalImpl(SerializationEngine seder, VersionManager manager) {
+	public JournalImpl(SerializationEngine seder, VersionManager manager, boolean autoSync) {
 		this.seder = seder;
 		this.manager = manager;
+		this.autoSynch = autoSync;
 	}
 
 	private void openJournal(DbVersion version2) 
@@ -56,7 +59,9 @@ public class JournalImpl implements Journal{
 			journalStream.getOutputStream().write(WRITE_LOG);
 			journalStream.write(mc.methodId);
 			journalStream.write(mc.parameters == null ? empty :mc.parameters);
-			// journalStream.flush(); not flushing each method
+
+			// if we are in transaction, no point in synchin every call even if we are in autosync.
+			if(autoSynch && (transactionDepth == 0) ) journalStream.flush(); 
 		}
 		catch(Exception e)
 		{
@@ -116,11 +121,13 @@ public class JournalImpl implements Journal{
 	@Override
 	public void writeStartTransaction() {
 		if(journalStream == null) throw new JouramException("Journal is not open");
+		
 		try
 		{
+			transactionDepth++;
 			numJournalEntries ++;
 			journalStream.getOutputStream().write(WRITE_START_TRANSACTION);
-			// journalStream.flush(); not flushing each method
+			// journalStream.flush(); doesn't make sense to flush here
 		}
 		catch(Exception e)
 		{
@@ -135,9 +142,10 @@ public class JournalImpl implements Journal{
 		if(journalStream == null) throw new JouramException("Journal is not open");
 		try
 		{
+			transactionDepth--;
 			numJournalEntries ++;
 			journalStream.getOutputStream().write(WRITE_END_TRANSACTION);
-			// journalStream.flush(); not flushing each method
+			if(autoSynch) journalStream.flush(); 
 		}
 		catch(Exception e)
 		{

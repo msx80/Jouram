@@ -15,9 +15,8 @@ import java.util.concurrent.ArrayBlockingQueue;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.Marker;
-import org.slf4j.helpers.BasicMarkerFactory;
 
+import com.github.msx80.jouram.core.queue.Cmd;
 import com.github.msx80.jouram.core.queue.CmdClose;
 import com.github.msx80.jouram.core.queue.CmdEndTransaction;
 import com.github.msx80.jouram.core.queue.CmdMethodCall;
@@ -66,13 +65,13 @@ class InstanceManager implements InvocationHandler {
 	private Object lock = new Object();
 	
 
-	public InstanceManager(SerializationEngine seder, Path dbFolder, String dbName) {
+	public InstanceManager(SerializationEngine seder, Path dbFolder, String dbName, boolean autoSync) {
 		tag = "["+dbName+"] ";
-		LOG.info(tag+"Creating Jouram '"+dbName+"' in "+dbFolder.toAbsolutePath());
+		LOG.info(tag+"Creating Jouram '"+dbName+"' in "+dbFolder.toAbsolutePath()+ " autoSync:"+autoSync);
 		manager = new VersionManager(dbFolder, dbName);
 		this.seder = seder;
 		
-		journal = new JournalImpl(seder, manager);
+		journal = new JournalImpl(seder, manager, autoSync);
 	}
 		
 	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable 
@@ -93,11 +92,10 @@ class InstanceManager implements InvocationHandler {
 
 		
 		// need to sincronize the instance: all calls will be serialized one after the other with no overlapping.
-		// this is necessary, even if the actual object is not synchronized, becouse the log file is one and each
+		// this is necessary, even if the actual object is not synchronized, because the log file is one and each
 		// call must be written when it's performed and finished.
-		// non-mutator methods are serialized too 
+		// non-mutator methods are synchronized too, because some call might be pending in the queue
 		synchronized (lock) {
-				
 			
 			// fail as soon as possible if the worker encountered an error writing something previously.
 			if(worker.exception != null) throw new JouramException("Jouram previously encountered an exception", worker.exception);
@@ -219,9 +217,10 @@ class InstanceManager implements InvocationHandler {
 		
 		if(Files.exists(dbMainFile))
 		{
+			long start = System.currentTimeMillis();
 			LOG.info(tag+"Loading instance...");
 			instance = (E)Util.objectFromFile(seder, dbMainFile, defaultInstance.getClass());
-			LOG.info(tag+"Instance loaded!");
+			LOG.info(tag+"Instance loaded in "+(System.currentTimeMillis()-start)+" millis.");
 		}
 		else
 		{
@@ -258,7 +257,7 @@ class InstanceManager implements InvocationHandler {
 			doSnapshot(0);
 		}
 		
-		worker = new JouramWorkerThread(this, new ArrayBlockingQueue<com.github.msx80.jouram.core.queue.Cmd>(1000));
+		worker = new JouramWorkerThread(this, new ArrayBlockingQueue<Cmd>(1000), this.manager.getDbName());
 		// worker.setDaemon(true); better not, it may kill it too soon
 		worker.start();
 		
@@ -385,6 +384,9 @@ class InstanceManager implements InvocationHandler {
 				return;
 			}
 			// if we need to snapshot, keep lock for the whole time to avoid concurrent modifications
+			// this should ensure that:
+			// 1) all concurrent thread access are kept outside (both for mutator and non-mutator)
+			// 2) the queue is completely flushed and the snapshot done before continuing
 			// TODO not sure it works. Deadlock ?
 			CmdSnapshot c = new CmdSnapshot(minimalJournalEntry);
 			worker.enqueue(c);
@@ -444,7 +446,6 @@ class InstanceManager implements InvocationHandler {
 				
 				// step 1
 				saveInstance(nev);
-				
 				// step 2
 				manager.deleteDb(old); // if exists
 				
@@ -467,10 +468,12 @@ class InstanceManager implements InvocationHandler {
 		
 	}
 
-	private void saveInstance(DbVersion version) throws Exception {
-
+	private void saveInstance(DbVersion version) throws Exception 
+	{
+		long start = System.currentTimeMillis();
+		LOG.info("Saving instance...");
 		Util.objectToFile(seder, manager.getPathForDbFile(version), instance);
-		
+		LOG.info("Instance saved in "+(System.currentTimeMillis()-start)+" millis.");
 	}
 
 	public void commandClose() throws JouramException {

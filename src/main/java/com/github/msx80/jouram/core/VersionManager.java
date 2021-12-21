@@ -139,5 +139,9 @@ class VersionManager {
 	}
 	
 	private final static Logger LOG = LoggerFactory.getLogger(VersionManager.class);
+
+	public String getDbName() {
+		return dbName;
+	}
 	
 }

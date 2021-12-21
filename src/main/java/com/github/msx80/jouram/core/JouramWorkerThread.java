@@ -29,10 +29,10 @@ public class JouramWorkerThread extends Thread {
 	boolean closing = false;
 	Exception exception = null;
 
-	public JouramWorkerThread(InstanceManager instanceManager, BlockingQueue<Cmd> arrayBlockingQueue) {
+	public JouramWorkerThread(InstanceManager instanceManager, BlockingQueue<Cmd> arrayBlockingQueue, String dbName) {
 		this.instanceManager = instanceManager;
 		this.queue = arrayBlockingQueue;
-		this.setName("Jouram Worker");
+		this.setName("Jouram Worker ["+dbName+"]");
 	}
 	
 	public void run()

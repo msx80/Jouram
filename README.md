@@ -1,3 +1,4 @@
+[![Release](https://jitpack.io/v/msx80/jouram.svg)](https://jitpack.io/#msx80/jouram)
 # Jouram #
 
 A persistence system based on in-memory database and journaling, similar to prevalence systems.
@@ -12,7 +13,7 @@ There are a couple of things to keep in mind to use Jouram:
 
 * All modifications to your persisted data must pass throu a single class/interface.
 * Your business classes must have a deterministic behaviour (see more below).
-* You business classes must be serializable with the serializer you choose to use (defaults to java Serializable engine)
+* You business classes must be serializable with the serializer you choose to use (defaults to java Serializable engine, but a much more efficient Kryo engine is provided)
 * All your business call will be "synchronized", ie executed serially, to grant that they do not overlap and are recorded in a meaningful way.
 * Exceptions raising from mutator methods are expected to leave the object unchanged.
 

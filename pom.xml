@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.github.msx80</groupId>
   <artifactId>jouram</artifactId>
-  <version>3.0.0</version>
+  <version>3.1.0</version>
   <name>Jouram</name>
   <description>A persistence system based on in-memory database and journaling, similar to prevalence systems.</description>
   <properties>
@@ -13,7 +13,7 @@
 	  <dependency>
         <groupId>com.esotericsoftware</groupId>
         <artifactId>kryo</artifactId>
-        <version>5.0.4</version>
+        <version>5.2.1</version>
     </dependency>
 <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-lang3 -->
 <dependency>
@@ -48,6 +48,18 @@
           <target>1.7</target>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+        <executions>
+            <execution>
+                <id>attach-sources</id>
+                <goals>
+                    <goal>jar</goal>
+                </goals>
+            </execution>
+        </executions>
+       </plugin>
     </plugins>
 
   </build>  

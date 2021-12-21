@@ -36,10 +36,11 @@ public class Jouram {
 	 * @param dbName the name of the db. The name of all files created by jouram will start with this string
 	 * @param yourInterface The interface of the object to persist
 	 * @param initialEmptyInstance default empty initial instance, for first time use.
+	 * @param autoSync Tells wether to sync the journal file at each change or not. It's usually very fast, but if you plan to change very often, you could pass "false" and then call Jouram.sync manually.
 	 * @return The persisting interface. You have to use this handle to access your classes.
 	 * @throws JouramException if anything go wrong.
 	 */
-	public static <E> E open(Path dbFolder, String dbName, Class<E> yourInterface, E initialEmptyInstance, SerializationEngine nullForDefault) throws JouramException
+	public static <E> E open(Path dbFolder, String dbName, Class<E> yourInterface, E initialEmptyInstance, boolean autoSync, SerializationEngine nullForDefault) throws JouramException
 	{
 		Objects.requireNonNull(dbFolder);
 		Objects.requireNonNull(dbName);
@@ -49,13 +50,13 @@ public class Jouram {
 		
 		
 		if (nullForDefault == null) nullForDefault = new SerializableSeder();
-		InstanceManager m = new InstanceManager(nullForDefault, dbFolder, dbName);
+		InstanceManager m = new InstanceManager(nullForDefault, dbFolder, dbName, autoSync);
 		return m.open(yourInterface, initialEmptyInstance);
 	}
 
-	public static <E> E open(Path dbFolder, String dbName, Class<E> yourInterface, E initialEmptyInstance) throws JouramException
+	public static <E> E open(Path dbFolder, String dbName, Class<E> yourInterface, E initialEmptyInstance, boolean autoSync) throws JouramException
 	{
-		return open(dbFolder, dbName, yourInterface, initialEmptyInstance, null);
+		return open(dbFolder, dbName, yourInterface, initialEmptyInstance, autoSync, null);
 	}
 	
 	
@@ -73,6 +74,15 @@ public class Jouram {
 		m.commandClose();
 	}
 	
+	/**
+	 * Run the passed code in a Jouram transaction, that is: either all or none of the changes
+	 * happening in the Runnable are persisted. Note: autosync is disable while in a transaction
+	 * since it's pointless, so performances are increased: use transactions if you need to make a lot
+	 * of changes in batch.
+	 * @param instance
+	 * @param run
+	 * @throws JouramException
+	 */
 	public static void transactional(Object instance, Runnable run) throws JouramException
 	{
 		Jouramed j = asJouramed(instance);
@@ -134,6 +144,7 @@ public class Jouram {
 	 * Makes sure any pending modification is written on the disk.
 	 * Wait for all enqueued messages to be processed, flushes it
 	 * and return.
+	 * If you opened the DB with autoSync, then you don't need to call this method.
 	 * @param instance The jouramed instance
 	 * @throws JouramException
 	 */
