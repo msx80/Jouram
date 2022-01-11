@@ -1,6 +1,7 @@
 package com.github.msx80.jouram.examples.simple;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -38,6 +39,12 @@ public class StringDbImpl implements StringDb, Serializable
 			System.out.println("- "+s);
 		}
 		
+	}
+
+	@Override
+	public List<String> all() {
+		
+		return new ArrayList<>(data);
 	}
 
 

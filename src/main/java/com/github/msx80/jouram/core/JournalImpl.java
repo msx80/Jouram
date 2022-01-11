@@ -1,12 +1,9 @@
 package com.github.msx80.jouram.core;
 
-import java.io.FileOutputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.github.msx80.jouram.core.fs.VFile;
 import com.github.msx80.jouram.core.utils.SerializationEngine;
 import com.github.msx80.jouram.core.utils.Serializer;
 
@@ -15,32 +12,31 @@ public class JournalImpl implements Journal{
 	public static final byte WRITE_LOG = 1;
 	public static final byte WRITE_START_TRANSACTION = 2;
 	public static final byte WRITE_END_TRANSACTION = 3;
+	public static final byte WRITE_LOG_EXCEPTION = 4;
 
 	private Serializer journalStream = null;
 	private final VersionManager manager;
 	private final SerializationEngine seder;
 
 	private long numJournalEntries = 0;
-	private boolean autoSynch;
 	private int transactionDepth = 0;
 	private static final Object[] empty = new Object[0];
 	
-	public JournalImpl(SerializationEngine seder, VersionManager manager, boolean autoSync) {
+	public JournalImpl(SerializationEngine seder, VersionManager manager) {
 		this.seder = seder;
 		this.manager = manager;
-		this.autoSynch = autoSync;
 	}
 
 	private void openJournal(DbVersion version2) 
 	{
-		Path dbJournal = manager.getPathForJournal(version2);
+		VFile dbJournal = manager.getPathForJournal(version2);
 		// open journal
-		if (Files.exists(dbJournal)) {
+		if (dbJournal.exists()) {
 			throw new JouramException("Journal file already exists "+dbJournal);
 		}
 		
 		try {
-			journalStream = seder.serializer(new FileOutputStream(dbJournal.toFile()));
+			journalStream = seder.serializer(dbJournal.write());
 		} catch (Exception e) {
 			throw new JouramException("Error opening journal stream", e);
 		}
@@ -51,17 +47,17 @@ public class JournalImpl implements Journal{
 	
 	
 	@Override
-	public void writeJournal(MethodCall mc) {
+	public void writeJournal(MethodCall mc, boolean shouldFlush) {
 		if(journalStream == null) throw new JouramException("Journal is not open");
 		try
 		{
 			numJournalEntries ++;
-			journalStream.getOutputStream().write(WRITE_LOG);
+			journalStream.writeByte(mc.withException ? WRITE_LOG_EXCEPTION : WRITE_LOG);
 			journalStream.write(mc.methodId);
 			journalStream.write(mc.parameters == null ? empty :mc.parameters);
 
-			// if we are in transaction, no point in synchin every call even if we are in autosync.
-			if(autoSynch && (transactionDepth == 0) ) journalStream.flush(); 
+			// if we are in transaction, no point in flushing every call even if required.
+			if(shouldFlush && (transactionDepth == 0) ) journalStream.flush(); 
 		}
 		catch(Exception e)
 		{
@@ -80,7 +76,6 @@ public class JournalImpl implements Journal{
 			if(old!=null) old.close();
 		} catch (Exception e) {
 			LOG.error("Exception while closing journal: "+e.getMessage(), e);
-			e.printStackTrace();
 		}
 
 	}
@@ -113,6 +108,7 @@ public class JournalImpl implements Journal{
 			try {
 				journalStream.flush();
 			} catch (Exception e) {
+				close();
 				throw new JouramException(e);
 			}
 		}
@@ -126,7 +122,7 @@ public class JournalImpl implements Journal{
 		{
 			transactionDepth++;
 			numJournalEntries ++;
-			journalStream.getOutputStream().write(WRITE_START_TRANSACTION);
+			journalStream.writeByte(WRITE_START_TRANSACTION);
 			// journalStream.flush(); doesn't make sense to flush here
 		}
 		catch(Exception e)
@@ -138,14 +134,14 @@ public class JournalImpl implements Journal{
 	}
 
 	@Override
-	public void writeEndTransaction() {
+	public void writeEndTransaction(boolean shouldFlush) {
 		if(journalStream == null) throw new JouramException("Journal is not open");
 		try
 		{
 			transactionDepth--;
 			numJournalEntries ++;
-			journalStream.getOutputStream().write(WRITE_END_TRANSACTION);
-			if(autoSynch) journalStream.flush(); 
+			journalStream.writeByte(WRITE_END_TRANSACTION);
+			if(shouldFlush) journalStream.flush(); 
 		}
 		catch(Exception e)
 		{

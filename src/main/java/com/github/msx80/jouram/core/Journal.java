@@ -4,9 +4,9 @@ public interface Journal {
 
 	boolean isOpen();
 	void open(DbVersion version);
-	void writeJournal(MethodCall mc);
+	void writeJournal(MethodCall mc, boolean shouldFlush);
 	void writeStartTransaction();
-	void writeEndTransaction();
+	void writeEndTransaction(boolean shouldFlush);
 	void close();
 	long size();
 	void flush();

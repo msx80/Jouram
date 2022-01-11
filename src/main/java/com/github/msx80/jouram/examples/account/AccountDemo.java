@@ -2,10 +2,8 @@ package com.github.msx80.jouram.examples.account;
 
 import java.math.BigDecimal;
 import java.nio.file.Paths;
-import java.util.logging.Level;
 
-import com.github.msx80.jouram.core.Jouram;
-import com.github.msx80.jouram.core.utils.SerializationEngine;
+import com.github.msx80.jouram.Jouram;
 import com.github.msx80.jouram.kryo.KryoSeder;
 
 public class AccountDemo {
@@ -21,7 +19,13 @@ public class AccountDemo {
 		// these modifications will be applied just once at db creation time
 		initial.addMoney(BigDecimal.valueOf(2000), "Initial sum");
 		
-		Account a = Jouram.open(Paths.get("."), "account", Account.class, initial, true, new KryoSeder());
+		Account a = Jouram
+				.setup(Account.class, initial)
+				.folder(Paths.get("."))
+				.dbName("account")
+				.serializationEngine(new KryoSeder())
+				.async(true)
+				.open();
 		
 		a.addMoney(BigDecimal.valueOf(1000), "Monthly pay");
 		a.addMoney(BigDecimal.valueOf(40), "Tip from grandma");

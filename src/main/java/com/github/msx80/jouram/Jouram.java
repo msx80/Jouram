@@ -1,8 +1,15 @@
-package com.github.msx80.jouram.core;
+package com.github.msx80.jouram;
 
-import java.nio.file.Path;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
+import com.github.msx80.jouram.core.InstanceController;
+import com.github.msx80.jouram.core.InstanceManager;
+import com.github.msx80.jouram.core.JouramException;
+import com.github.msx80.jouram.core.JouramSetup;
+import com.github.msx80.jouram.core.Jouramed;
+import com.github.msx80.jouram.core.fs.VFile;
 import com.github.msx80.jouram.core.utils.SerializableSeder;
 import com.github.msx80.jouram.core.utils.SerializationEngine;
 
@@ -22,9 +29,16 @@ import com.github.msx80.jouram.core.utils.SerializationEngine;
  */
 public class Jouram {
 
+	private static Set<String> openedDb = new HashSet<>();
+	
 	private Jouram() {
 	}
 
+	public static <E> JouramSetup<E> setup(Class<E> yourInterface, E initiallyEmptyInterface)
+	{
+		return new JouramSetup<E>(yourInterface, initiallyEmptyInterface);
+	}
+	
 	/**
 	 * Open a jouram database. You must supply the interface to be persisted
 	 * and an initial instance. This initial instance will be used to create the
@@ -36,29 +50,32 @@ public class Jouram {
 	 * @param dbName the name of the db. The name of all files created by jouram will start with this string
 	 * @param yourInterface The interface of the object to persist
 	 * @param initialEmptyInstance default empty initial instance, for first time use.
-	 * @param autoSync Tells wether to sync the journal file at each change or not. It's usually very fast, but if you plan to change very often, you could pass "false" and then call Jouram.sync manually.
 	 * @return The persisting interface. You have to use this handle to access your classes.
 	 * @throws JouramException if anything go wrong.
 	 */
-	public static <E> E open(Path dbFolder, String dbName, Class<E> yourInterface, E initialEmptyInstance, boolean autoSync, SerializationEngine nullForDefault) throws JouramException
+	public static <E> E open(VFile dbFolder, String dbName, Class<E> yourInterface, E initialEmptyInstance, SerializationEngine nullForDefault, boolean async) throws JouramException
 	{
+		if(openedDb.contains(dbName))
+		{
+			throw new JouramException("A database with name '"+dbName+"' is already open. Close it first or use a different name.");
+		}
 		Objects.requireNonNull(dbFolder);
 		Objects.requireNonNull(dbName);
 		Objects.requireNonNull(yourInterface);
 		Objects.requireNonNull(initialEmptyInstance);
+		
 		if(!yourInterface.isInterface()) throw new JouramException("yourInterface should be an Interface.");
 		
 		
 		if (nullForDefault == null) nullForDefault = new SerializableSeder();
-		InstanceManager m = new InstanceManager(nullForDefault, dbFolder, dbName, autoSync);
-		return m.open(yourInterface, initialEmptyInstance);
+		InstanceManager m = new InstanceManager(nullForDefault, dbFolder, dbName);
+		E e = m.open(yourInterface, initialEmptyInstance, async, () -> {
+			Jouram.openedDb.remove(dbName);
+		});
+		openedDb.add(dbName);
+		return e;
 	}
 
-	public static <E> E open(Path dbFolder, String dbName, Class<E> yourInterface, E initialEmptyInstance, boolean autoSync) throws JouramException
-	{
-		return open(dbFolder, dbName, yourInterface, initialEmptyInstance, autoSync, null);
-	}
-	
 	
 	/**
 	 * Close an instance of Jouram. Note that the instance proxy cannot be used anymore.
@@ -69,24 +86,30 @@ public class Jouram {
 	 */
 	public static void close(Object instance) throws JouramException
 	{
-		Jouramed j = asJouramed(instance);
-		InstanceManager m = j.getJouram();
-		m.commandClose();
+		asJouramed(instance).getJouram().commandClose(false);
+	}
+	/**
+	 * Rapidly close an instance of Jouram. Note that the instance proxy cannot be used anymore.
+	 * Closing this way will NOT make a snapshot if there are pending journal entries.
+	 * Next restart will eventually find a journal and replay it.
+	 * @param instance the instance to close.
+	 * @throws JouramException
+	 */
+	public static void kill(Object instance) throws JouramException
+	{
+		asJouramed(instance).getJouram().commandClose(true);
 	}
 	
 	/**
 	 * Run the passed code in a Jouram transaction, that is: either all or none of the changes
-	 * happening in the Runnable are persisted. Note: autosync is disable while in a transaction
-	 * since it's pointless, so performances are increased: use transactions if you need to make a lot
-	 * of changes in batch.
+	 * happening in the Runnable are persisted. 
 	 * @param instance
 	 * @param run
 	 * @throws JouramException
 	 */
 	public static void transactional(Object instance, Runnable run) throws JouramException
 	{
-		Jouramed j = asJouramed(instance);
-		InstanceManager m = j.getJouram();
+		InstanceController m = asJouramed(instance).getJouram();
 		m.commandStartTransaction();
 		try
 		{
@@ -99,19 +122,13 @@ public class Jouram {
 	}
 	public static void startTransaction(Object instance) throws JouramException
 	{
-		Jouramed j = asJouramed(instance);
-		InstanceManager m = j.getJouram();
-		m.commandStartTransaction();
+		asJouramed(instance).getJouram().commandStartTransaction();
 	}
 	public static void endTransaction(Object instance) throws JouramException
 	{
-		Jouramed j = asJouramed(instance);
-		InstanceManager m = j.getJouram();
-		m.commandEndTransaction();
+		asJouramed(instance).getJouram().commandEndTransaction();
 	}
 	
-	
-
 	private static Jouramed asJouramed(Object instance) 
 	{
 		if(instance instanceof Jouramed)
@@ -128,31 +145,44 @@ public class Jouram {
 	 * Dumps the entire instance on the db file and removes the journal, obtaining a clean
 	 * situation with no modifications pending. This is done automatically on opening and closing of the db, but can be
 	 * called manually to avoid indefinite growth of the journal.
-	 * Note that this does not wait for the snapshot to be completed, you can call sync() after this to make sure it's done.
+	 * Note that this method will wait for the snapshot to be completed before returning.
 	 * @param instance The instance to snapshot
 	 * @param minimalJournalEntry the number of entries required to do a snapshot, if less the method does nothing
 	 * @throws JouramException
 	 */
 	public static void snapshot(Object instance, long minimalJournalEntry) throws JouramException
 	{
-		Jouramed j = asJouramed(instance);
-		InstanceManager m = j.getJouram();
-		m.commandSnapshot(minimalJournalEntry);
+		asJouramed(instance).getJouram().commandSnapshot(minimalJournalEntry);
 	}
 	
 	/**
 	 * Makes sure any pending modification is written on the disk.
 	 * Wait for all enqueued messages to be processed, flushes it
 	 * and return.
-	 * If you opened the DB with autoSync, then you don't need to call this method.
 	 * @param instance The jouramed instance
 	 * @throws JouramException
 	 */
 	public static void sync(Object instance) throws JouramException
 	{
-		Jouramed j = asJouramed(instance);
-		InstanceManager m = j.getJouram();
-		m.commandSync();
+		asJouramed(instance).getJouram().commandSync();
+	}
+	
+	/**
+	 * Convenience method that returns a "read only" view of the instance,
+	 * that is: an instance that will throw UnsupportedOperationException if
+	 * a method marked with @Mutator is called.
+	 * Useful when you want to pass the instance to some context you don't have
+	 * full control. The underlying data is the same and calls are serialized with
+	 * the same mutex as the main instance, ensuring proper serialization.
+	 * @param <E>
+	 * @param instance
+	 * @return
+	 * @throws JouramException
+	 */
+	@SuppressWarnings("unchecked")
+	public static <E> E readOnly(E instance) throws JouramException
+	{
+		return (E) asJouramed(instance).getJouram().makeReadOnlyProxy();
 	}
 	
 }

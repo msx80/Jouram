@@ -1,27 +1,27 @@
 package com.github.msx80.jouram.core;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.github.msx80.jouram.core.utils.Util;
+import com.github.msx80.jouram.core.fs.VFile;
 
-class VersionManager {
+public class VersionManager {
 
 	
-	private Path dbFolder;
+	private VFile dbFolder;
 	private String dbName;
+	// private FileSystem fs;
 	
-	Map<DbVersion, Path> dbFiles = null;
-	Map<DbVersion, Path> joFiles = null;
+	Map<DbVersion, VFile> dbFiles = null;
+	Map<DbVersion, VFile> joFiles = null;
 	
-	public VersionManager(Path dbFolder, String dbName) {
+	public VersionManager(VFile dbFolder, String dbName) {
 		super();
+		
 		this.dbFolder = dbFolder;
 		this.dbName = dbName;
 		
@@ -43,7 +43,7 @@ class VersionManager {
 		DbVersion journalVersion = null; // this is the current journal version
 		
 		for (DbVersion v : DbVersion.values()) {
-			if(Files.exists(joFiles.get(v)))
+			if(joFiles.get(v).exists())
 			{
 				if(journalVersion != null) throw new JouramException("More than one journal file found."); 
 				journalVersion = v;
@@ -65,49 +65,49 @@ class VersionManager {
 		}
 	}
 
-	public Path getPathForJournal(DbVersion v) {
+	public VFile getPathForJournal(DbVersion v) {
 		return dbFolder.resolve(dbName+"."+v+".jou");
 	}
 
-	public Path getPathForDbFile(DbVersion v) {
+	public VFile getPathForDbFile(DbVersion v) {
 		return dbFolder.resolve(dbName+"."+v+".jdb");
 	}
 	
 	public void deleteDb(DbVersion v) throws IOException
 	{
-		Util.secureDelete(getPathForDbFile(v));
+		getPathForDbFile(v).delete();
 	}
 	public void deleteJournal(DbVersion v) throws IOException
 	{
-		Util.secureDelete(getPathForJournal(v));
+		getPathForJournal(v).delete();;
 	}
 
 	private DbVersion caseOneJournal(DbVersion journalVersion) throws IOException 
 	{
-		Path prvvvDb = dbFiles.get(journalVersion.prev());
-		Path currDb = dbFiles.get(journalVersion);
-		Path nextDb = dbFiles.get(journalVersion.next());
+		VFile prvvvDb = dbFiles.get(journalVersion.prev());
+		VFile currDb = dbFiles.get(journalVersion);
+		VFile nextDb = dbFiles.get(journalVersion.next());
 		
-		if(Files.exists(prvvvDb))
+		if(prvvvDb.exists())
 		{
 			throw new JouramException("A db with previous version than the current journal exists.");
 		}
-		else if(Files.exists(currDb) && Files.exists(nextDb))
+		else if(currDb.exists() && nextDb.exists())
 		{
 			// must have been killed while the new db file was being written
 			// since we don't know if it was written correctly, we revert to the previous one.
 			LOG.info("Found current and next db, deleting next");
-			Util.secureDelete(nextDb);
+			nextDb.delete();
 			return journalVersion;
 		}
-		else if (Files.exists(currDb))
+		else if (currDb.exists())
 		{
 			// only the current db exists. This is the usual case if app is killed before committing.
 			// just use the current files.
 			LOG.info("Found a single db, using: {}",journalVersion);
 			return journalVersion;
 		}
-		else if (Files.exists(nextDb))
+		else if (nextDb.exists())
 		{
 			// the next file already exists, but not the current. Rare case in which a commit already removed the current db but not the current journal.
 			LOG.info("Found next db, removing stale Journal {}",journalVersion);
@@ -126,7 +126,7 @@ class VersionManager {
 		// we are in the situation of having no journal at all. There should be one or zero db, if it's there it should be ok.
 		DbVersion dbVersion = null; 
 		for (DbVersion v : DbVersion.values()) {
-			if(Files.exists(dbFiles.get(v)))
+			if(dbFiles.get(v).exists())
 			{
 				if(dbVersion != null) throw new JouramException("Two db files found with no journal."); 
 				dbVersion = v;

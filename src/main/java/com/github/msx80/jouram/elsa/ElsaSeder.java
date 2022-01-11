@@ -1,41 +1,56 @@
 package com.github.msx80.jouram.elsa;
 
-public class ElsaSeder  /*implements Seder*/ {
-/*
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+
+import org.mapdb.elsa.ElsaMaker;
+import org.mapdb.elsa.ElsaSerializer;
+
+import com.github.msx80.jouram.core.utils.Deserializer;
+import com.github.msx80.jouram.core.utils.SerializationEngine;
+import com.github.msx80.jouram.core.utils.Serializer;
+
+public class ElsaSeder implements SerializationEngine {
+
+	final ElsaSerializer elsa;
+
+	public ElsaSeder() {
+		this.elsa = new ElsaMaker().make();
+	}
+	
+	public ElsaSeder(ElsaSerializer elsa) {
+		this.elsa = elsa;
+	}
+
 	@Override
 	public Deserializer deserializer(InputStream is) {
-		final ElsaSerializer elsa = new ElsaMaker().make();
 		final DataInputStream in = new DataInputStream(is);
 		return new Deserializer() {
 			
 			@Override
-			public <T> T read(Class<T> cls) {
+			public <T> T read(Class<T> cls)  throws EOFException, Exception{
 				
-				try {
-					return elsa.deserialize(in);
-				} catch (IOException e) {
-					throw new RuntimeException(e);
-				}
+				
+				return elsa.deserialize(in);
+				
 			}
 			
 			@Override
-			public void close() {
-				try {
+			public void close() throws IOException {
+			
 					in.close();
-				} catch (IOException e) {
-					throw new RuntimeException(e);
-				}
+				
 				
 			}
-			
+		
+
 			@Override
-			public boolean available() {
-				
-				try {
-					return in.available() > 0;
-				} catch (IOException e) {
-					throw new RuntimeException(e);
-				}
+			public int readByte() throws Exception {
+				return in.read();
 			}
 		};
 	}
@@ -47,35 +62,33 @@ public class ElsaSeder  /*implements Seder*/ {
 		return new Serializer() {
 			
 			@Override
-			public void write(Object o) {
-				try {
+			public void write(Object o) throws IOException {
+				
 					elsa.serialize(out2, o);
-				} catch (IOException e) {
-					throw new RuntimeException(e);
-				}
+				
 				
 			}
 			
 			@Override
-			public void flush() {
-				try {
+			public void flush() throws IOException {
+			
 					out2.flush();
-				} catch (IOException e) {
-					throw new RuntimeException(e);
-				}
 				
 			}
 			
 			@Override
-			public void close() {
-				try {
+			public void close() throws IOException {
+		
 					out2.close();
-				} catch (IOException e) {
-					throw new RuntimeException(e);
-				}
+			
+				
+			}
+
+			@Override
+			public void writeByte(int o) throws Exception {
+				out2.write(o);
 				
 			}
 		};
 	}
-*/
 }

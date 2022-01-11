@@ -15,11 +15,16 @@ import com.github.msx80.jouram.core.utils.Serializer;
 
 public class KryoSeder implements SerializationEngine {
 
-	final Kryo k = new Kryo();
+	final Kryo k;
 
 	public KryoSeder() {
+		k = new Kryo();
 		k.setRegistrationRequired(false);
 		k.setDefaultSerializer(VersionFieldSerializer.class);
+	}
+
+	public KryoSeder(Kryo kryo) {
+		k = kryo;
 	}
 	
 	@Override
@@ -38,10 +43,11 @@ public class KryoSeder implements SerializationEngine {
 				}
 				catch (KryoException e) {
 					// kryo doesn't report clearly then it encounters an EOF.
-					// look inside the message to detect
+					// look inside the message to detect it.
+					// see https://github.com/EsotericSoftware/kryo/issues/872
 					if(e.getMessage().contains("Buffer underflow"))
 					{
-						throw new EOFException();
+						throw new EOFException("Buffer underflow");
 					}
 					throw e;
 				}
@@ -52,12 +58,10 @@ public class KryoSeder implements SerializationEngine {
 				ais.close();
 				
 			}
-
 			@Override
-			public InputStream getInputStream() {
-				return ais;
+			public int readByte() {
+				return ais.read();
 			}
-
 		
 		};
 	}
@@ -86,18 +90,12 @@ public class KryoSeder implements SerializationEngine {
 				aos.flush();
 				
 			}
-
-			@Override
-			public OutputStream getOutputStream() {
-				return aos;
+			
+			public void writeByte(int o) throws Exception
+			{
+				aos.write(o);
 			}
 		};
-	}
-
-	@Override
-	public Object register(Class<?> cls) {
-		
-		return k.register(cls);
 	}
 
 }

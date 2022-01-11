@@ -1,8 +1,6 @@
 package com.github.msx80.jouram.examples.simple;
 
-import java.nio.file.Paths;
-
-import com.github.msx80.jouram.core.Jouram;
+import com.github.msx80.jouram.Jouram;
 
 public class SimpleDemo {
 
@@ -11,7 +9,7 @@ public class SimpleDemo {
 		// instantiate a Jouram engine, open database "demo" in current directory
 		// and obtain our StringDb, we also pass our initial implementation that will
 		// be used if the database is being created
-		final StringDb db = Jouram.open(Paths.get("."), "demo", StringDb.class, new StringDbImpl(), true);
+		final StringDb db = Jouram.setup(StringDb.class, new StringDbImpl()).open();
 		
 		// do some work
 		System.out.println("There are now "+db.size()+" entries.");

@@ -3,7 +3,8 @@ package com.github.msx80.jouram.examples.stress;
 import java.nio.file.Paths;
 import java.util.Date;
 
-import com.github.msx80.jouram.core.Jouram;
+import com.github.msx80.jouram.Jouram;
+import com.github.msx80.jouram.core.fs.VFile;
 import com.github.msx80.jouram.kryo.KryoSeder;
 
 public class StressMain {
@@ -12,7 +13,7 @@ public class StressMain {
 
 	public static void main(String[] args) throws InterruptedException {
 		
-		final Database db = Jouram.open(Paths.get("."), "stressed", Database.class, new DatabaseImpl(), false, new KryoSeder());
+		final Database db = Jouram.open(VFile.fromPath(Paths.get(".")), "stressed", Database.class, new DatabaseImpl(), new KryoSeder(), true);
 
 		//http://ruedigermoeller.github.io/fast-serialization/
 		
@@ -24,20 +25,19 @@ public class StressMain {
 			public void run() {
 				for (int i = 0; i < HOWMANY; i++) {
 					
-					db.addMessage(new Date(), "Hello from thread "+Thread.currentThread().getName());
+					db.addMessage(new Date(), "Hello from thread "+Thread.currentThread().getName()+" "+System.currentTimeMillis());
 				}
 				Jouram.sync(db);
 				for (int i = 0; i < HOWMANY; i++) {
 					
-					db.addMessage(new Date(), "Hello from thread "+Thread.currentThread().getName());
+					db.addMessage(new Date(), "Hello from thread "+Thread.currentThread().getName()+" "+System.currentTimeMillis());
 				}
 				Jouram.sync(db);				
 				for (int i = 0; i < HOWMANY; i++) {
 					
-					db.addMessage(new Date(), "Hello from thread "+Thread.currentThread().getName());
+					db.addMessage(new Date(), "Hello from thread "+Thread.currentThread().getName()+" "+System.currentTimeMillis());
 				}
-				Jouram.sync(db);
-				
+				Jouram.snapshot(db, 1);
 			}
 		};
 		

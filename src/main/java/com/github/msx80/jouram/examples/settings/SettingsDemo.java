@@ -1,8 +1,6 @@
 package com.github.msx80.jouram.examples.settings;
 
-import java.nio.file.Paths;
-
-import com.github.msx80.jouram.core.Jouram;
+import com.github.msx80.jouram.Jouram;
 
 public class SettingsDemo {
 
@@ -10,7 +8,7 @@ public class SettingsDemo {
 
 		// a simple demo to store settings in the form of a Map
 		
-		Settings mySettings = Jouram.open(Paths.get("."), "settings", Settings.class, new SettingsImpl(), true);
+		Settings mySettings = Jouram.setup(Settings.class, new SettingsImpl()).open();
 
 		System.out.println("Current settings:");
 		for (String k : mySettings.keys()) {

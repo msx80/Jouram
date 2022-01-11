@@ -1,10 +1,14 @@
 package com.github.msx80.jouram.core.utils;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 
+/**
+ * A SerializationEngine based on standard java serialization
+ */
 public class SerializableSeder implements SerializationEngine {
 
 	@Override
@@ -26,9 +30,8 @@ public class SerializableSeder implements SerializationEngine {
 			}
 
 			@Override
-			public InputStream getInputStream() {
-				
-				return ds;
+			public int readByte() throws IOException {
+				return ds.read();
 			}
 		
 		
@@ -43,7 +46,6 @@ public class SerializableSeder implements SerializationEngine {
 			@Override
 			public void write(Object o) throws Exception {
 				oo.writeObject(o);
-				oo.flush();
 			}
 
 			@Override
@@ -55,23 +57,15 @@ public class SerializableSeder implements SerializationEngine {
 			@Override
 			public void flush() throws Exception {
 				oo.flush();
-				
 			}
 
-			@Override
-			public OutputStream getOutputStream() {
-				
-				return oo;
-			}
 			
+			public void writeByte(int o) throws Exception
+			{
+				oo.write(o);
+			}
 		
 		};
-	}
-
-	@Override
-	public Object register(Class<?> cls) {
-		// TODO Auto-generated method stub
-		return null;
 	}
 
 }

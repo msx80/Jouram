@@ -4,8 +4,6 @@ import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import org.apache.commons.lang3.reflect.FieldUtils;
-
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
@@ -26,7 +24,7 @@ public class ClassToBytes {
 		
 		Test a = new Test();
 		System.out.println(a);
-		FieldUtils.writeField(a, "pc", "sovrascritto", true);
+		// FieldUtils.writeField(a, "pc", "sovrascritto", true);
 		
 		System.out.println(a);
 		

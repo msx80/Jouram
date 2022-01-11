@@ -4,10 +4,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
-
-import org.apache.commons.lang3.reflect.FieldUtils;
 
 public class ClassProfile {
 	public final ClassField[] fields;
@@ -25,7 +22,7 @@ public class ClassProfile {
 
 	public static final ClassProfile calculate(Class<?> c)
 	{
-		Field[] ff = FieldUtils.getAllFields(c);
+		Field[] ff = null;// FieldUtils.getAllFields(c);
 		
 		List<ClassField> res = new ArrayList<>();
 		

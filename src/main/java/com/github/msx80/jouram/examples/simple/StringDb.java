@@ -1,5 +1,7 @@
 package com.github.msx80.jouram.examples.simple;
 
+import java.util.List;
+
 import com.github.msx80.jouram.core.Mutator;
 
 /**
@@ -33,5 +35,7 @@ public interface StringDb {
 	 * Prints the entire content of the database.
 	 */
 	public abstract void print();
+	
+	public List<String> all();
 	
 }

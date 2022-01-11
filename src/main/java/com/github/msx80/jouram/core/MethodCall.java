@@ -12,11 +12,13 @@ public class MethodCall implements Serializable{
 
 	public final String methodId;
 	public final Object[] parameters;
+	public final boolean withException;
 
-	public MethodCall(String methodId, Object[] parameters) {
+	public MethodCall(String methodId, Object[] parameters, boolean withException) {
 		super();
 		this.methodId = methodId;
 		this.parameters = parameters;
+		this.withException = withException;
 	}
 	
 	

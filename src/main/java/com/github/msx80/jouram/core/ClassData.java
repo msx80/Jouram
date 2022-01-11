@@ -7,6 +7,8 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.github.msx80.jouram.Jouram;
+
 /**
  * Stores all mutator method of a given class
  *
@@ -15,8 +17,6 @@ public class ClassData {
 
 	private final Map<Method, String> idByMethod = new HashMap<>();
 	private final Map<String, Method> methodById = new HashMap<>();
-		
-	
 
 	public ClassData(Class<?> interf) {
 		
