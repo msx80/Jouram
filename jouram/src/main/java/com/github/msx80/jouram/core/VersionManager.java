@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import com.github.msx80.jouram.core.fs.VFile;
 
-public class VersionManager {
+public final class VersionManager {
 
 	
 	private VFile dbFolder;

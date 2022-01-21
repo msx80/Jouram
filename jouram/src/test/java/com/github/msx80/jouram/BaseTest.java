@@ -12,23 +12,27 @@ import com.github.msx80.jouram.core.async.JouramWorkerThread;
 import com.github.msx80.jouram.core.utils.SerializableSeder;
 import com.github.msx80.jouram.elsa.ElsaSeder;
 import com.github.msx80.jouram.kryo.KryoSeder;
+import com.github.msx80.jouram.text.TextSeder;
 
 public class BaseTest 
 {
 	protected static Stream<Arguments> provideParameters() {
 	    return Stream.of(
 	            Arguments.of(KryoSeder.class),
+	            Arguments.of(TextSeder.class),	            
 	            Arguments.of(SerializableSeder.class),
 	            Arguments.of(ElsaSeder.class)
 	    );
 	}
 	protected static Stream<Arguments> provideParameters2() {
 	    return Stream.of(
+	            Arguments.of(TextSeder.class, true),
+	            Arguments.of(TextSeder.class, false),
 	            Arguments.of(KryoSeder.class, true),
-	            Arguments.of(SerializableSeder.class, true),
-	            Arguments.of(ElsaSeder.class, true),
 	            Arguments.of(KryoSeder.class, false),
+	            Arguments.of(SerializableSeder.class, true),
 	            Arguments.of(SerializableSeder.class, false),
+	            Arguments.of(ElsaSeder.class, true),
 	            Arguments.of(ElsaSeder.class, false)
 	    );
 	}	

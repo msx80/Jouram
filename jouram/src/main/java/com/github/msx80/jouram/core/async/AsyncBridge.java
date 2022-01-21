@@ -20,7 +20,7 @@ import com.github.msx80.jouram.core.queue.CmdStartTransaction;
 import com.github.msx80.jouram.core.queue.CmdSync;
 import com.github.msx80.jouram.core.queue.WaitingCmd;
 
-public class AsyncBridge implements EngineBridge {
+public final class AsyncBridge implements EngineBridge {
 	private static Logger LOG = LoggerFactory.getLogger(AsyncBridge.class);
 	
 	

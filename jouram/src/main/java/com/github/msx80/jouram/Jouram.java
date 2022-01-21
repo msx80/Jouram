@@ -1,15 +1,19 @@
 package com.github.msx80.jouram;
 
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
 import com.github.msx80.jouram.core.InstanceController;
 import com.github.msx80.jouram.core.InstanceManager;
 import com.github.msx80.jouram.core.JouramException;
-import com.github.msx80.jouram.core.JouramSetup;
+import com.github.msx80.jouram.core.JouramBuilder;
 import com.github.msx80.jouram.core.Jouramed;
 import com.github.msx80.jouram.core.fs.VFile;
+import com.github.msx80.jouram.core.map.FrontFacingMap;
+import com.github.msx80.jouram.core.map.JouramMap;
+import com.github.msx80.jouram.core.map.JouramMapImpl;
 import com.github.msx80.jouram.core.utils.SerializableSeder;
 import com.github.msx80.jouram.core.utils.SerializationEngine;
 
@@ -27,16 +31,18 @@ import com.github.msx80.jouram.core.utils.SerializationEngine;
  * * no modifiable state should be exposed (ie no getMap() returning internal Map that can be modified externally)
  * * all mutation must happen throu calling of Mutable methods on the interface.
  */
-public class Jouram {
+public final class Jouram {
 
 	private static Set<String> openedDb = new HashSet<>();
 	
 	private Jouram() {
 	}
 
-	public static <E> JouramSetup<E> setup(Class<E> yourInterface, E initiallyEmptyInterface)
+	public static <E> JouramBuilder<E,E> setup(Class<E> yourInterface, E initiallyEmptyInterface)
 	{
-		return new JouramSetup<E>(yourInterface, initiallyEmptyInterface);
+		return new JouramBuilder<E, E>(yourInterface, initiallyEmptyInterface, s -> {
+			return Jouram.open(s.dbFolder, s.dbName, s.yourInterface, s.initialEmptyInstance, s.nullForDefault, s.async);
+		});
 	}
 	
 	/**
@@ -184,5 +190,29 @@ public class Jouram {
 	{
 		return (E) asJouramed(instance).getJouram().makeReadOnlyProxy();
 	}
+
+	/**
+	 * Utility method that returns (a builder to) a persisted Map. 
+	 * All jouram methods like close() etc will work on the returned object.
+	 * @param <K>
+	 * @param <V>
+	 * @param keyClass
+	 * @param valueClass
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	public static <K,V> JouramBuilder<JouramMap<K, V>, Map<K,V>> map(Class<K> keyClass, Class<V> valueClass)
+	{
+		Class<JouramMap<K, V>> cls = (Class<JouramMap<K, V>>)(Object)JouramMap.class;
+		
+		JouramBuilder<JouramMap<K, V>, Map<K,V>> setup = new JouramBuilder<JouramMap<K, V>, Map<K, V>>(cls, new JouramMapImpl<K,V>(), s -> {
+
+			JouramMap<K,V> a = (JouramMap<K, V>) Jouram.open(s.dbFolder, s.dbName, s.yourInterface, s.initialEmptyInstance, s.nullForDefault, s.async);
+			return new FrontFacingMap<K,V>(a);
+			
+		});
+		return setup;
+	}
+
 	
 }

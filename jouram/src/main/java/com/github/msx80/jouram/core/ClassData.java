@@ -13,7 +13,7 @@ import com.github.msx80.jouram.Jouram;
  * Stores all mutator method of a given class
  *
  */
-public class ClassData {
+public final class ClassData {
 
 	private final Map<Method, String> idByMethod = new HashMap<>();
 	private final Map<String, Method> methodById = new HashMap<>();

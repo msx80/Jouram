@@ -22,7 +22,23 @@ jobs:
         java-version: '8'
         distribution: 'adopt'
         cache: maven
-    - name: Build with Maven
+    - name: Build base
+      run: |
+        cd jouram-base
+        mvn -B clean compile install
+    - name: Build kryo
+      run: |
+        cd jouram-kryo
+        mvn -B clean compile install
+    - name: Build elsa
+      run: |
+        cd jouram-elsa
+        mvn -B clean compile install
+    - name: Build text
+      run: |
+        cd jouram-text
+        mvn -B clean compile install
+    - name: Build Jouram
       run: |
         cd jouram
-        mvn -B clean compile package
+        mvn -B clean compile install package

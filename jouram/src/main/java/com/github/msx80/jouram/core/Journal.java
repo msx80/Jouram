@@ -10,5 +10,6 @@ public interface Journal {
 	void close();
 	long size();
 	void flush();
+	boolean isInTransaction();
 	
 }

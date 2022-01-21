@@ -2,20 +2,14 @@ package com.github.msx80.jouram.core.utils;
 
 import java.io.ByteArrayOutputStream;
 import java.util.Iterator;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.function.Consumer;
 
 import com.github.msx80.jouram.core.fs.VFile;
 
-public class Util {
+public final class Util {
 
+	private Util() {}
 	
-	public interface Acceptor<T> {
-		void accept(T t) throws Exception;
-
-	}
-
 	public static void objectToFile(SerializationEngine seder, VFile path, Object object) throws Exception
 	{
 		try(Serializer s = seder.serializer(path.write()))
@@ -46,7 +40,7 @@ public class Util {
 		
 	}
 	
-	public static <T> void objectsFromFile(SerializationEngine seder, VFile file, Class<T> cls, Acceptor<T> consumer) throws Exception
+	public static <T> void objectsFromFile(SerializationEngine seder, VFile file, Class<T> cls, Consumer<T> consumer) throws Exception
 	{
 		
 		try(Deserializer s = seder.deserializer(file.read()))

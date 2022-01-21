@@ -20,12 +20,7 @@ import com.github.msx80.jouram.core.utils.Deserializer;
 import com.github.msx80.jouram.core.utils.SerializationEngine;
 import com.github.msx80.jouram.core.utils.Util;
 
-
-class IntHolder {
-    public int value;
-}
-
-public class InstanceManager implements InvocationHandler, InstanceController {
+public final class InstanceManager implements InvocationHandler, InstanceController {
 	
 	private static Logger LOG = LoggerFactory.getLogger(InstanceManager.class);
 	private String tag;
@@ -197,6 +192,8 @@ public class InstanceManager implements InvocationHandler, InstanceController {
 		checkWorkerThread();
 		//  if so, journal this call
 		LOG.info(tag+"Journaling end transaction");
+		
+		if(!journal.isInTransaction()) throw new JouramException("Not in a transaction");
 		if(!journal.isOpen()) journal.open(currentDbVersion); 
 		journal.writeEndTransaction(shouldFlush);
 	}
@@ -492,6 +489,12 @@ public class InstanceManager implements InvocationHandler, InstanceController {
 			if(journal.size() < minimalJournalEntry)
 			{
 				LOG.info(tag+"Not enought entries, no snapshot");
+				return;
+			}
+			
+			if(journal.isInTransaction())
+			{
+				LOG.info(tag+"There is an active transaction, no snapshot");
 				return;
 			}
 			

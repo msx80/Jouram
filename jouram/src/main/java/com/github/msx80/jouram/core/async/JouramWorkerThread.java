@@ -17,7 +17,7 @@ import com.github.msx80.jouram.core.queue.CmdStartTransaction;
 import com.github.msx80.jouram.core.queue.CmdSync;
 import com.github.msx80.jouram.core.queue.WaitingCmd;
 
-public class JouramWorkerThread extends Thread {
+public final class JouramWorkerThread extends Thread {
 
 	private static Logger LOG = LoggerFactory.getLogger(JouramWorkerThread.class);
 	private InstanceManager instanceManager;

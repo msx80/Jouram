@@ -7,7 +7,7 @@ import com.github.msx80.jouram.core.fs.VFile;
 import com.github.msx80.jouram.core.utils.SerializationEngine;
 import com.github.msx80.jouram.core.utils.Serializer;
 
-public class JournalImpl implements Journal{
+public final class JournalImpl implements Journal{
 
 	public static final byte WRITE_LOG = 1;
 	public static final byte WRITE_START_TRANSACTION = 2;
@@ -149,6 +149,11 @@ public class JournalImpl implements Journal{
 			close();
 			throw new JouramException("Could not write journal for end transaction, Jouram closed to prevent journal corruption.", e);
 		}
+	}
+
+	@Override
+	public boolean isInTransaction() {
+		return transactionDepth > 0;
 	}
 
 	

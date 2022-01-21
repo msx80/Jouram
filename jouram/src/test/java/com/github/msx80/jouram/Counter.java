@@ -12,4 +12,5 @@ public interface Counter {
 	@Mutator void incrementAndReallyExplode(int i);	
 	
 	void explode();
+
 }

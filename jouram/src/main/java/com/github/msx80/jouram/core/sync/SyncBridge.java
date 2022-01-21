@@ -7,7 +7,7 @@ import com.github.msx80.jouram.core.InstanceManager;
 import com.github.msx80.jouram.core.JouramException;
 import com.github.msx80.jouram.core.MethodCall;
 
-public class SyncBridge implements EngineBridge {
+public final class SyncBridge implements EngineBridge {
 
 	private InstanceManager instanceManager;
 	private Consumer<Exception> exceptionListener;

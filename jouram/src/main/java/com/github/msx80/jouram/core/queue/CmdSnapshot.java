@@ -1,6 +1,6 @@
 package com.github.msx80.jouram.core.queue;
 
-public class CmdSnapshot 
+public final class CmdSnapshot 
 
 	extends WaitingCmd // Needed as solution to a concurrency problem:
 						// when enqueuing a snapshot and not syncing, some other mutator method may be called
