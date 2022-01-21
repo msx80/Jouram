@@ -7,8 +7,6 @@
   <description>A serialization engine for Jouram based on Elsa</description>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-
-  	<junit.version>5.8.2</junit.version>
   </properties>
   <dependencies>
 <dependency>
@@ -20,7 +18,7 @@
 <dependency>
     <groupId>com.github.msx80</groupId>
     <artifactId>jouram-base</artifactId>
-    <version>4.0.0</version>
+    <version>4.1.0</version>
 </dependency>
 
 </dependencies>  
