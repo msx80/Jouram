@@ -1,9 +1,11 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>com.github.msx80</groupId>
+    <parent>
+        <groupId>com.github.msx80</groupId>
+        <artifactId>jouram-parent</artifactId>
+        <version>4.1.1</version>
+    </parent>
   <artifactId>jouram-elsa</artifactId>
-  <version>1.0.0</version>
-  <name>Jouram-Elsa</name>
   <description>A serialization engine for Jouram based on Elsa</description>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -18,7 +20,7 @@
 <dependency>
     <groupId>com.github.msx80</groupId>
     <artifactId>jouram-base</artifactId>
-    <version>4.1.0</version>
+    <version>4.1.1</version>
 </dependency>
 
 </dependencies>  
